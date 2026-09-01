@@ -439,7 +439,7 @@
 <section class="setup" id="setup">
   <p>Type a name and press enter. Pasting a whole list separated by commas or line breaks works too.</p>
   <div class="entry">
-    <input type="text" id="nameInput" placeholder="Player name" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Player name">
+    <input type="text" id="nameInput" placeholder="Name" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Name">
   </div>
   <div class="chips" id="chips"></div>
 </section>
@@ -451,13 +451,13 @@
 </div>
 
 <div class="result" id="result" aria-live="polite">
-  <span class="idle">Add at least two players.</span>
+  <span class="idle">Add at least two names.</span>
 </div>
 
 <div class="controls">
   <button class="spin" id="spinBtn" disabled>Spin</button>
   <div class="minor">
-    <button id="editBtn" hidden>Edit players</button>
+    <button id="editBtn" hidden>Edit names</button>
     <button id="undoBtn" hidden>Undo last</button>
     <button id="resetBtn" hidden>Start over</button>
     <button id="soundBtn">Sound on</button>
@@ -498,7 +498,7 @@
   const LABEL_INK = ['#0B1F2C', '#F7F5F0', '#0B1F2C'];
 
   const state = {
-    players: [],     // {id, name}
+    names: [],       // {id, name}
     remaining: [],   // ids, in wheel order
     drawn: [],       // ids, in the order they came out
     rotation: 0,
@@ -512,7 +512,7 @@
   const $ = id => document.getElementById(id);
   const canvas = $('wheel');
   const ctx = canvas.getContext('2d');
-  const nameOf = id => (state.players.find(p => p.id === id) || {}).name || '';
+  const nameOf = id => (state.names.find(p => p.id === id) || {}).name || '';
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -554,7 +554,7 @@
   }
 
   /* The one place a winner is chosen. Falls through to real randomness
-     whenever the slot is empty or the named player is already off the wheel. */
+     whenever the slot is empty or the named entry is already off the wheel. */
   function pickIndex(n) {
     const want = order[state.drawn.length];
     if (want) {
@@ -570,17 +570,17 @@
   function addNames(raw) {
     const parts = raw.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
     for (const name of parts) {
-      if (state.players.some(p => p.name.toLowerCase() === name.toLowerCase())) continue;
+      if (state.names.some(p => p.name.toLowerCase() === name.toLowerCase())) continue;
       const p = { id: nextId++, name: name.slice(0, 24) };
-      state.players.push(p);
+      state.names.push(p);
       state.remaining.push(p.id);
     }
     assignColors();
     renderAll();
   }
 
-  function removePlayer(id) {
-    state.players = state.players.filter(p => p.id !== id);
+  function removeName(id) {
+    state.names = state.names.filter(p => p.id !== id);
     state.remaining = state.remaining.filter(x => x !== id);
     state.drawn = state.drawn.filter(x => x !== id);
     assignColors();
@@ -628,7 +628,7 @@
       ctx.font = "500 15px Archivo, system-ui, sans-serif";
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(state.players.length ? 'Everyone drawn' : 'Add players', cx, cy);
+      ctx.fillText(state.names.length ? 'Everyone drawn' : 'Add names', cx, cy);
       return;
     }
 
@@ -822,7 +822,7 @@
   }
 
   function renderAll() {
-    $('chips').innerHTML = state.players.map(p =>
+    $('chips').innerHTML = state.names.map(p =>
       '<span class="chip">' + escapeHtml(p.name) +
       '<button type="button" data-id="' + p.id + '" aria-label="Remove ' + escapeHtml(p.name) + '">\u00d7</button></span>'
     ).join('');
@@ -832,8 +832,8 @@
       .join('');
     $('history').hidden = state.drawn.length === 0;
 
-    $('tally').textContent = state.players.length
-      ? state.remaining.length + ' of ' + state.players.length + ' left'
+    $('tally').textContent = state.names.length
+      ? state.remaining.length + ' of ' + state.names.length + ' left'
       : '';
 
     setControls();
@@ -844,7 +844,7 @@
   function setControls() {
     const btn = $('spinBtn');
     const started = state.drawn.length > 0;
-    const done = state.players.length > 0 && state.remaining.length === 0;
+    const done = state.names.length > 0 && state.remaining.length === 0;
 
     btn.disabled = state.spinning || state.remaining.length === 0;
     btn.textContent = state.spinning ? 'Spinning' : done ? 'All drawn' : 'Spin';
@@ -854,15 +854,15 @@
     $('undoBtn').hidden = !started;
     $('resetBtn').hidden = !started;
 
-    // Big CTA in the hub only before the first spin, once there are enough players.
+    // Big CTA in the hub only before the first spin, once there are enough names.
     $('spinHub').hidden = state.spinning || started || state.remaining.length < 2;
 
     if (!started && !state.spinning) {
-      const need = state.players.length < 2;
+      const need = state.names.length < 2;
       const r = $('result');
       if (!r.querySelector('.name')) {
         r.innerHTML = '<span class="idle">' +
-          (need ? 'Add at least two players.' : 'Ready when you are.') + '</span>';
+          (need ? 'Add at least two names.' : 'Ready when you are.') + '</span>';
       }
     }
   }
@@ -887,7 +887,7 @@
 
   $('chips').addEventListener('click', e => {
     const b = e.target.closest('button');
-    if (b) removePlayer(Number(b.dataset.id));
+    if (b) removeName(Number(b.dataset.id));
   });
 
   $('spinBtn').addEventListener('click', spin);
@@ -900,7 +900,7 @@
   });
 
   $('resetBtn').addEventListener('click', () => {
-    state.remaining = state.players.map(p => p.id);
+    state.remaining = state.names.map(p => p.id);
     state.drawn = [];
     state.rotation = 0;
     assignColors();
