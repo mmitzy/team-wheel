@@ -237,13 +237,75 @@
   }
   .history li::marker { color: var(--muted); font-size: 12px; }
 
+  /* ---------- composer (long-press the title) ---------- */
+  .composer {
+    width: 100%;
+    max-width: 560px;
+    border: 1px solid var(--ball-gold);
+    border-radius: 14px;
+    padding: 16px;
+    background: var(--court-deep);
+  }
+  .composer[hidden] { display: none; }
+
+  .composer p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  .composer textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--hair);
+    background: rgba(0,0,0,.22);
+    color: var(--ball-white);
+    resize: vertical;
+    min-height: 130px;
+  }
+  .composer textarea:focus-visible { outline: 2px solid var(--ball-gold); outline-offset: 1px; }
+
+  .composer .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+
+  .composer .go {
+    all: unset;
+    cursor: pointer;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--ball-gold);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .composer .go:focus-visible { outline: 3px solid var(--ball-white); outline-offset: 2px; }
+
+  .composer .status { font-size: 13px; color: var(--muted); }
+
+  .composer .out {
+    margin-top: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    word-break: break-all;
+    color: var(--ball-gold);
+  }
+  .composer .out:empty { display: none; }
+
+  h1 { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
   @media (max-width: 380px) {
     .history ol { columns: 1; }
   }
 </style>
 
 <header>
-  <h1>Name draw</h1>
+  <h1 id="title">Name draw</h1>
   <span class="tally" id="tally"></span>
 </header>
 
@@ -279,6 +341,17 @@
   <ol id="drawnList"></ol>
 </section>
 
+<section class="composer" id="composer" hidden>
+  <p>One name per line, in the order they should come out. A blank line or a single dash leaves that slot genuinely random. Trailing blanks are ignored. Names must match the roster exactly, apart from case.</p>
+  <textarea id="orderText" spellcheck="false" autocapitalize="words" aria-label="Draw order"></textarea>
+  <div class="row">
+    <button type="button" class="go" id="makeLink">Build link</button>
+    <button type="button" class="go" id="applyNow">Apply here</button>
+    <span class="status" id="composerStatus"></span>
+  </div>
+  <div class="out" id="linkOut"></div>
+</section>
+
 <script>
 (() => {
   'use strict';
@@ -305,6 +378,55 @@
   const nameOf = id => (state.players.find(p => p.id === id) || {}).name || '';
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- draw order ----------
+     A list of names, one per draw. null means "let this one be random".
+     Arrives base64url-encoded in ?c= and is wiped from the address bar
+     as soon as it is read. Nothing is stored on disk. */
+
+  let order = [];
+
+  function b64encode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function b64decode(b64) {
+    const pad = b64.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(pad + '='.repeat((4 - pad.length % 4) % 4));
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  function loadOrder() {
+    try {
+      const raw = new URLSearchParams(location.search).get('c');
+      if (raw) {
+        const parsed = JSON.parse(b64decode(raw));
+        if (Array.isArray(parsed)) order = parsed;
+      }
+    } catch (e) {
+      order = [];
+    }
+    // Leave a clean address bar regardless of what came in.
+    if (location.search) {
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    }
+  }
+
+  /* The one place a winner is chosen. Falls through to real randomness
+     whenever the slot is empty or the named player is already off the wheel. */
+  function pickIndex(n) {
+    const want = order[state.drawn.length];
+    if (want) {
+      const target = String(want).trim().toLowerCase();
+      const i = state.remaining.findIndex(id => nameOf(id).trim().toLowerCase() === target);
+      if (i !== -1) return i;
+    }
+    return Math.floor(Math.random() * n);
+  }
 
   /* ---------- roster ---------- */
 
@@ -467,7 +589,7 @@
     const n = state.remaining.length;
     const seg = TAU / n;
 
-    const index = Math.floor(Math.random() * n);
+    const index = pickIndex(n);
     const offset = 0.15 + Math.random() * 0.7;   // land inside the wedge, not dead centre
 
     let target = -(index + offset) * seg;
@@ -612,9 +734,65 @@
     if (state.sound) wakeAudio();
   });
 
+  /* ---------- composer ---------- */
+
+  function parseOrder(text) {
+    const rows = text.split('\n').map(s => s.trim());
+    const arr = rows.map(s => (!s || s === '-') ? null : s);
+    while (arr.length && arr[arr.length - 1] === null) arr.pop();
+    return arr;
+  }
+
+  function describe(arr) {
+    const set = arr.filter(Boolean).length;
+    if (!arr.length) return 'Cleared. Every spin is random.';
+    return set + ' of ' + arr.length + ' slots set, rest random.';
+  }
+
+  function openComposer() {
+    const c = $('composer');
+    c.hidden = !c.hidden;
+    if (!c.hidden) {
+      $('orderText').value = order.map(x => x || '-').join('\n');
+      $('composerStatus').textContent = describe(order);
+      $('orderText').focus();
+    }
+  }
+
+  $('makeLink').addEventListener('click', () => {
+    const arr = parseOrder($('orderText').value);
+    const url = location.origin + location.pathname + '?c=' + b64encode(JSON.stringify(arr));
+    $('linkOut').textContent = url;
+    $('composerStatus').textContent = describe(arr);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+        .then(() => { $('composerStatus').textContent = describe(arr) + ' Link copied.'; })
+        .catch(() => {});
+    }
+  });
+
+  $('applyNow').addEventListener('click', () => {
+    order = parseOrder($('orderText').value);
+    $('composerStatus').textContent = describe(order) + ' Active.';
+    $('linkOut').textContent = '';
+  });
+
+  // Long-press the title for 1.2s to reveal the composer.
+  let pressTimer = null;
+  const title = $('title');
+  const startPress = () => { pressTimer = setTimeout(openComposer, 1200); };
+  const endPress = () => { clearTimeout(pressTimer); pressTimer = null; };
+  title.addEventListener('pointerdown', startPress);
+  title.addEventListener('pointerup', endPress);
+  title.addEventListener('pointerleave', endPress);
+  title.addEventListener('pointercancel', endPress);
+  title.addEventListener('contextmenu', e => e.preventDefault());
+
+  loadOrder();
   new ResizeObserver(sizeCanvas).observe(canvas);
   document.fonts && document.fonts.ready.then(draw);
   sizeCanvas();
   renderAll();
 })();
+
 </script>
