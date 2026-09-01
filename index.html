@@ -151,6 +151,54 @@
     z-index: 2;
   }
 
+  .spin-hub {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 24%;
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 50%;
+    background: var(--ball-gold);
+    color: var(--ink);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 900;
+    font-variation-settings: 'wdth' 118, 'wght' 900;
+    font-size: clamp(13px, 3.4vw, 18px);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    z-index: 3;
+    box-shadow: 0 6px 22px rgba(0,0,0,.35), 0 0 0 3px rgba(11,31,44,.45);
+    transition: transform .12s ease;
+  }
+  .spin-hub[hidden] { display: none; }
+  .spin-hub:hover { transform: translate(-50%, -50%) scale(1.04); }
+  .spin-hub:active { transform: translate(-50%, -50%) scale(.97); }
+  .spin-hub:focus-visible { outline: 3px solid var(--ball-white); outline-offset: 4px; }
+  .spin-hub::before,
+  .spin-hub::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--ball-gold);
+    pointer-events: none;
+    animation: hubRing 1.8s ease-out infinite;
+  }
+  .spin-hub::after { animation-delay: .9s; }
+  @keyframes hubRing {
+    0%   { transform: scale(1);   opacity: .75; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spin-hub::before,
+    .spin-hub::after { animation: none; opacity: 0; }
+    .spin-hub:hover,
+    .spin-hub:active { transform: translate(-50%, -50%); }
+  }
+
   /* ---------- result + controls ---------- */
   .result {
     width: 100%;
@@ -299,6 +347,85 @@
 
   h1 { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
+  /* ---------- winner celebration ---------- */
+  .celebration {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(11,31,44,.82);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    display: grid;
+    place-items: center;
+    padding: 32px 20px;
+    animation: celebFade .25s ease;
+  }
+  .celebration[hidden] { display: none; }
+
+  .celebration-inner {
+    display: grid;
+    gap: 22px;
+    justify-items: center;
+    text-align: center;
+    max-width: 100%;
+  }
+  .celebration-label {
+    font-size: 13px;
+    letter-spacing: .35em;
+    text-transform: uppercase;
+    color: var(--ball-gold);
+    font-weight: 800;
+    font-variation-settings: 'wdth' 112, 'wght' 800;
+  }
+  .celebration-name {
+    font-size: clamp(46px, 13vw, 112px);
+    font-weight: 900;
+    font-variation-settings: 'wdth' 125, 'wght' 900;
+    letter-spacing: -.025em;
+    line-height: 1;
+    color: var(--ball-white);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    animation: celebPop .55s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  .celebration-close {
+    all: unset;
+    cursor: pointer;
+    padding: 14px 34px;
+    border-radius: 999px;
+    background: var(--ball-gold);
+    color: var(--ink);
+    font-size: 16px;
+    font-weight: 800;
+    font-variation-settings: 'wdth' 115, 'wght' 800;
+  }
+  .celebration-close:focus-visible { outline: 3px solid var(--ball-white); outline-offset: 3px; }
+
+  .confetti {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 21;
+  }
+  .confetti[hidden] { display: none; }
+
+  @keyframes celebFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes celebPop {
+    0%   { transform: scale(.6);  opacity: 0; }
+    60%  { transform: scale(1.06); opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .celebration { animation: none; }
+    .celebration-name { animation: none; }
+  }
+
   @media (max-width: 380px) {
     .history ol { columns: 1; }
   }
@@ -320,6 +447,7 @@
 <div class="stage">
   <div class="pointer"></div>
   <canvas id="wheel"></canvas>
+  <button type="button" class="spin-hub" id="spinHub" hidden aria-label="Spin the wheel">Spin</button>
 </div>
 
 <div class="result" id="result" aria-live="polite">
@@ -340,6 +468,15 @@
   <h2>Drawn so far</h2>
   <ol id="drawnList"></ol>
 </section>
+
+<div class="celebration" id="celebration" hidden aria-live="assertive" role="dialog" aria-modal="true" aria-labelledby="celebrationName">
+  <div class="celebration-inner">
+    <span class="celebration-label">Winner</span>
+    <span class="celebration-name" id="celebrationName"></span>
+    <button type="button" class="celebration-close" id="celebrationClose">Continue</button>
+  </div>
+</div>
+<canvas class="confetti" id="confetti" aria-hidden="true" hidden></canvas>
 
 <section class="composer" id="composer" hidden>
   <p>One name per line, in the order they should come out. A blank line or a single dash leaves that slot genuinely random. Trailing blanks are ignored. Names must match the roster exactly, apart from case.</p>
@@ -496,7 +633,13 @@
     }
 
     const seg = TAU / n;
-    const fontSize = Math.max(11, Math.min(21, r * (n > 12 ? 0.10 : 0.135)));
+    // Font is bounded by the wedge's tangential thickness at label mid-radius,
+    // so text never bleeds into neighbouring wedges no matter how many entries.
+    const arcThickness = r * 0.55 * seg;
+    const fontSize = Math.min(21, arcThickness * 0.72);
+    const showLabels = fontSize >= 5.5;
+    const strokeAlpha = n > 200 ? 0 : n > 80 ? 0.14 : 0.28;
+    const strokeWidth = n > 300 ? 0 : n > 80 ? 0.6 : n > 40 ? 1 : 1.5;
 
     for (let i = 0; i < n; i++) {
       const a0 = i * seg - Math.PI / 2 + state.rotation;
@@ -508,9 +651,13 @@
       ctx.closePath();
       ctx.fillStyle = PALETTE[ci];
       ctx.fill();
-      ctx.strokeStyle = 'rgba(11,31,44,.28)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      if (strokeAlpha > 0) {
+        ctx.strokeStyle = `rgba(11,31,44,${strokeAlpha})`;
+        ctx.lineWidth = strokeWidth;
+        ctx.stroke();
+      }
+
+      if (!showLabels) continue;
 
       // label, reading outward along the wedge
       ctx.save();
@@ -522,7 +669,7 @@
       ctx.textBaseline = 'middle';
       let label = nameOf(state.remaining[i]);
       const maxW = r - fontSize * 2.2;
-      while (label.length > 3 && ctx.measureText(label).width > maxW) {
+      while (label.length > 1 && ctx.measureText(label).width > maxW) {
         label = label.slice(0, -1);
       }
       ctx.fillText(label, r - fontSize * 0.75, 0);
@@ -580,8 +727,34 @@
     return Math.min(n - 1, Math.floor(a / seg));
   }
 
+  /* ---------- idle rotation ---------- */
+
+  let idleRaf = null;
+  let idleLastFrame = 0;
+
+  function startIdle() {
+    if (idleRaf || reduceMotion) return;
+    if (state.spinning || state.remaining.length < 2) return;
+    idleLastFrame = performance.now();
+    const step = (now) => {
+      if (state.spinning || state.remaining.length < 2) { idleRaf = null; return; }
+      const dt = Math.min(50, now - idleLastFrame) / 1000;
+      idleLastFrame = now;
+      state.rotation = (state.rotation + dt * 0.18) % TAU;
+      draw();
+      idleRaf = requestAnimationFrame(step);
+    };
+    idleRaf = requestAnimationFrame(step);
+  }
+
+  function stopIdle() {
+    if (idleRaf) cancelAnimationFrame(idleRaf);
+    idleRaf = null;
+  }
+
   function spin() {
     if (state.spinning || state.remaining.length === 0) return;
+    stopIdle();
     wakeAudio();
     state.spinning = true;
     setControls();
@@ -628,7 +801,9 @@
     assignColors();
     state.spinning = false;
     renderAll();
-    $('result').innerHTML = '<span class="name">' + escapeHtml(nameOf(id)) + '</span>';
+    const name = nameOf(id);
+    $('result').innerHTML = '<span class="name">' + escapeHtml(name) + '</span>';
+    showCelebration(name);
   }
 
   function undo() {
@@ -663,6 +838,7 @@
 
     setControls();
     draw();
+    startIdle();
   }
 
   function setControls() {
@@ -677,6 +853,9 @@
     $('editBtn').hidden = !started;
     $('undoBtn').hidden = !started;
     $('resetBtn').hidden = !started;
+
+    // Big CTA in the hub only before the first spin, once there are enough players.
+    $('spinHub').hidden = state.spinning || started || state.remaining.length < 2;
 
     if (!started && !state.spinning) {
       const need = state.players.length < 2;
@@ -712,6 +891,7 @@
   });
 
   $('spinBtn').addEventListener('click', spin);
+  $('spinHub').addEventListener('click', spin);
   $('undoBtn').addEventListener('click', undo);
 
   $('editBtn').addEventListener('click', () => {
@@ -733,6 +913,120 @@
     e.target.textContent = state.sound ? 'Sound on' : 'Sound off';
     if (state.sound) wakeAudio();
   });
+
+  /* ---------- winner celebration ---------- */
+
+  const confettiCanvas = $('confetti');
+  const cctx = confettiCanvas.getContext('2d');
+  const CONFETTI_COLORS = ['#F7F5F0', '#2E6FB7', '#F2B233', '#E2493A'];
+  let confetti = [];
+  let confettiRaf = null;
+  let previouslyFocused = null;
+
+  function sizeConfetti() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    confettiCanvas.width = Math.round(innerWidth * dpr);
+    confettiCanvas.height = Math.round(innerHeight * dpr);
+    confettiCanvas.style.width = innerWidth + 'px';
+    confettiCanvas.style.height = innerHeight + 'px';
+    cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function spawnBurst(originX, originY, angle) {
+    const count = 90;
+    for (let i = 0; i < count; i++) {
+      const a = angle + (Math.random() - 0.5) * 0.7;
+      const speed = 11 + Math.random() * 14;
+      confetti.push({
+        x: originX,
+        y: originY,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed,
+        size: 6 + Math.random() * 7,
+        rot: Math.random() * Math.PI * 2,
+        vrot: (Math.random() - 0.5) * 0.4,
+        color: CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0],
+        oval: Math.random() < 0.3,
+      });
+    }
+  }
+
+  function stepConfetti() {
+    const w = innerWidth, h = innerHeight;
+    cctx.clearRect(0, 0, w, h);
+    const gravity = 0.32;
+    const drag = 0.992;
+
+    confetti = confetti.filter(p => {
+      p.vx *= drag;
+      p.vy = p.vy * drag + gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vrot;
+      if (p.y > h + 60 || p.x < -60 || p.x > w + 60) return false;
+
+      cctx.save();
+      cctx.translate(p.x, p.y);
+      cctx.rotate(p.rot);
+      cctx.fillStyle = p.color;
+      if (p.oval) {
+        cctx.beginPath();
+        cctx.ellipse(0, 0, p.size * 0.55, p.size * 0.3, 0, 0, TAU);
+        cctx.fill();
+      } else {
+        cctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.55);
+      }
+      cctx.restore();
+      return true;
+    });
+
+    if (confetti.length > 0) {
+      confettiRaf = requestAnimationFrame(stepConfetti);
+    } else {
+      cctx.clearRect(0, 0, w, h);
+      confettiCanvas.hidden = true;
+      confettiRaf = null;
+    }
+  }
+
+  function fireConfetti() {
+    if (reduceMotion) return;
+    sizeConfetti();
+    confettiCanvas.hidden = false;
+    const h = innerHeight;
+    spawnBurst(0, h, -Math.PI / 3);
+    spawnBurst(innerWidth, h, -2 * Math.PI / 3);
+    setTimeout(() => {
+      spawnBurst(innerWidth * 0.15, h, -Math.PI / 2.6);
+      spawnBurst(innerWidth * 0.85, h, -Math.PI + Math.PI / 2.6);
+    }, 220);
+    if (!confettiRaf) confettiRaf = requestAnimationFrame(stepConfetti);
+  }
+
+  function showCelebration(name) {
+    previouslyFocused = document.activeElement;
+    $('celebrationName').textContent = name;
+    $('celebration').hidden = false;
+    fireConfetti();
+    // Focus the close button so Enter/Space dismisses it.
+    setTimeout(() => $('celebrationClose').focus(), 20);
+  }
+
+  function hideCelebration() {
+    $('celebration').hidden = true;
+    if (previouslyFocused && previouslyFocused.focus) {
+      try { previouslyFocused.focus(); } catch (e) {}
+    }
+  }
+
+  $('celebrationClose').addEventListener('click', hideCelebration);
+  $('celebration').addEventListener('click', e => {
+    if (e.target === $('celebration')) hideCelebration();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('celebration').hidden) hideCelebration();
+  });
+  addEventListener('resize', () => { if (!confettiCanvas.hidden) sizeConfetti(); });
 
   /* ---------- composer ---------- */
 
