@@ -1,0 +1,620 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Name draw</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --court:  #14405C;
+    --court-deep: #0E2E43;
+    --ball-white: #F7F5F0;
+    --ball-blue:  #2E6FB7;
+    --ball-gold:  #F2B233;
+    --line:   #E2493A;
+    --ink:    #0B1F2C;
+    --muted:  rgba(247,245,240,.62);
+    --hair:   rgba(247,245,240,.18);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--court);
+    color: var(--ball-white);
+    font-family: Archivo, system-ui, sans-serif;
+    font-variation-settings: 'wdth' 100;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    padding: 20px 18px calc(28px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    font-variation-settings: 'wdth' 118, 'wght' 800;
+    letter-spacing: -.015em;
+  }
+
+  .tally {
+    font-size: 14px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- roster setup ---------- */
+  .setup {
+    width: 100%;
+    max-width: 560px;
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    padding: 16px;
+    background: var(--court-deep);
+  }
+  .setup[hidden] { display: none; }
+
+  .setup p {
+    margin: 0 0 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 46ch;
+  }
+
+  .entry { display: flex; gap: 8px; }
+
+  input[type=text] {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    font-size: 16px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--hair);
+    background: rgba(0,0,0,.22);
+    color: var(--ball-white);
+  }
+  input[type=text]::placeholder { color: rgba(247,245,240,.4); }
+  input[type=text]:focus-visible { outline: 2px solid var(--ball-gold); outline-offset: 1px; }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 14px;
+  }
+  .chips:empty { display: none; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 14px;
+    padding: 6px 8px 6px 11px;
+    border-radius: 999px;
+    background: rgba(247,245,240,.1);
+  }
+  .chip button {
+    all: unset;
+    cursor: pointer;
+    width: 19px;
+    height: 19px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1;
+  }
+  .chip button:hover { background: rgba(247,245,240,.16); color: var(--ball-white); }
+  .chip button:focus-visible { outline: 2px solid var(--ball-gold); }
+
+  /* ---------- wheel ---------- */
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1;
+  }
+  canvas { width: 100%; height: 100%; display: block; }
+
+  .pointer {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    width: 26px;
+    height: 34px;
+    margin-left: -13px;
+    background: var(--line);
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,.4));
+    z-index: 2;
+  }
+
+  /* ---------- result + controls ---------- */
+  .result {
+    width: 100%;
+    max-width: 560px;
+    min-height: 62px;
+    text-align: center;
+    display: grid;
+    place-content: center;
+    gap: 3px;
+  }
+  .result .name {
+    font-size: clamp(30px, 9vw, 46px);
+    font-weight: 900;
+    font-variation-settings: 'wdth' 124, 'wght' 900;
+    letter-spacing: -.02em;
+    line-height: 1;
+  }
+  .result .idle { font-size: 15px; color: var(--muted); }
+
+  .controls {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .spin {
+    all: unset;
+    cursor: pointer;
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+    padding: 17px;
+    border-radius: 999px;
+    background: var(--ball-gold);
+    color: var(--ink);
+    font-size: 19px;
+    font-weight: 800;
+    font-variation-settings: 'wdth' 115, 'wght' 800;
+  }
+  .spin:focus-visible { outline: 3px solid var(--ball-white); outline-offset: 3px; }
+  .spin[disabled] { cursor: default; background: rgba(247,245,240,.14); color: var(--muted); }
+
+  .minor { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  .minor button {
+    all: unset;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--hair);
+    padding-bottom: 1px;
+  }
+  .minor button:hover { color: var(--ball-white); border-bottom-color: currentColor; }
+  .minor button:focus-visible { outline: 2px solid var(--ball-gold); outline-offset: 3px; }
+  .minor button[hidden] { display: none; }
+
+  /* ---------- drawn so far ---------- */
+  .history {
+    width: 100%;
+    max-width: 560px;
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: var(--court-deep);
+  }
+  .history[hidden] { display: none; }
+
+  .history h2 {
+    margin: 0 0 10px;
+    font-size: 15px;
+    font-weight: 800;
+    font-variation-settings: 'wdth' 112, 'wght' 800;
+  }
+
+  .history ol {
+    margin: 0;
+    padding-left: 22px;
+    font-size: 16px;
+    line-height: 1.8;
+    columns: 2;
+    column-gap: 24px;
+  }
+  .history li::marker { color: var(--muted); font-size: 12px; }
+
+  @media (max-width: 380px) {
+    .history ol { columns: 1; }
+  }
+</style>
+
+<header>
+  <h1>Name draw</h1>
+  <span class="tally" id="tally"></span>
+</header>
+
+<section class="setup" id="setup">
+  <p>Type a name and press enter. Pasting a whole list separated by commas or line breaks works too.</p>
+  <div class="entry">
+    <input type="text" id="nameInput" placeholder="Player name" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Player name">
+  </div>
+  <div class="chips" id="chips"></div>
+</section>
+
+<div class="stage">
+  <div class="pointer"></div>
+  <canvas id="wheel"></canvas>
+</div>
+
+<div class="result" id="result" aria-live="polite">
+  <span class="idle">Add at least two players.</span>
+</div>
+
+<div class="controls">
+  <button class="spin" id="spinBtn" disabled>Spin</button>
+  <div class="minor">
+    <button id="editBtn" hidden>Edit players</button>
+    <button id="undoBtn" hidden>Undo last</button>
+    <button id="resetBtn" hidden>Start over</button>
+    <button id="soundBtn">Sound on</button>
+  </div>
+</div>
+
+<section class="history" id="history" hidden>
+  <h2>Drawn so far</h2>
+  <ol id="drawnList"></ol>
+</section>
+
+<script>
+(() => {
+  'use strict';
+
+  const TAU = Math.PI * 2;
+  const PALETTE = ['#F7F5F0', '#2E6FB7', '#F2B233'];
+  const LABEL_INK = ['#0B1F2C', '#F7F5F0', '#0B1F2C'];
+
+  const state = {
+    players: [],     // {id, name}
+    remaining: [],   // ids, in wheel order
+    drawn: [],       // ids, in the order they came out
+    rotation: 0,
+    spinning: false,
+    sound: true,
+  };
+
+  let nextId = 1;
+  let colors = [];
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('wheel');
+  const ctx = canvas.getContext('2d');
+  const nameOf = id => (state.players.find(p => p.id === id) || {}).name || '';
+
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- roster ---------- */
+
+  function addNames(raw) {
+    const parts = raw.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
+    for (const name of parts) {
+      if (state.players.some(p => p.name.toLowerCase() === name.toLowerCase())) continue;
+      const p = { id: nextId++, name: name.slice(0, 24) };
+      state.players.push(p);
+      state.remaining.push(p.id);
+    }
+    assignColors();
+    renderAll();
+  }
+
+  function removePlayer(id) {
+    state.players = state.players.filter(p => p.id !== id);
+    state.remaining = state.remaining.filter(x => x !== id);
+    state.drawn = state.drawn.filter(x => x !== id);
+    assignColors();
+    renderAll();
+  }
+
+  /* Cycle the three ball colors, avoiding a seam where the last wedge
+     touches the first with the same fill. */
+  function assignColors() {
+    const n = state.remaining.length;
+    colors = Array.from({ length: n }, (_, i) => i % 3);
+    if (n > 2 && colors[n - 1] === colors[0]) {
+      colors[n - 1] = [0, 1, 2].find(c => c !== colors[n - 2] && c !== colors[0]);
+    }
+  }
+
+  /* ---------- canvas ---------- */
+
+  function sizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  function draw() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const cx = w / 2, cy = h / 2;
+    const r = Math.min(w, h) / 2 - 6;
+    const n = state.remaining.length;
+
+    ctx.clearRect(0, 0, w, h);
+
+    if (n === 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, TAU);
+      ctx.strokeStyle = 'rgba(247,245,240,.2)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([7, 9]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(247,245,240,.45)';
+      ctx.font = "500 15px Archivo, system-ui, sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.players.length ? 'Everyone drawn' : 'Add players', cx, cy);
+      return;
+    }
+
+    const seg = TAU / n;
+    const fontSize = Math.max(11, Math.min(21, r * (n > 12 ? 0.10 : 0.135)));
+
+    for (let i = 0; i < n; i++) {
+      const a0 = i * seg - Math.PI / 2 + state.rotation;
+      const ci = colors[i] ?? (i % 3);
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, a0, a0 + seg);
+      ctx.closePath();
+      ctx.fillStyle = PALETTE[ci];
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(11,31,44,.28)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // label, reading outward along the wedge
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(a0 + seg / 2);
+      ctx.fillStyle = LABEL_INK[ci];
+      ctx.font = `700 ${fontSize}px Archivo, system-ui, sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      let label = nameOf(state.remaining[i]);
+      const maxW = r - fontSize * 2.2;
+      while (label.length > 3 && ctx.measureText(label).width > maxW) {
+        label = label.slice(0, -1);
+      }
+      ctx.fillText(label, r - fontSize * 0.75, 0);
+      ctx.restore();
+    }
+
+    // hub
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(24, r * 0.15), 0, TAU);
+    ctx.fillStyle = '#0E2E43';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(247,245,240,.55)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#F7F5F0';
+    ctx.font = `800 ${Math.max(15, r * 0.115)}px Archivo, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(n), cx, cy + 1);
+  }
+
+  /* ---------- sound ---------- */
+
+  let audio = null;
+  function tick() {
+    if (!state.sound || !audio) return;
+    const t = audio.currentTime;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 880 + Math.random() * 220;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.05, t + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + 0.06);
+  }
+
+  function wakeAudio() {
+    if (!state.sound) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+    } catch (e) { audio = null; }
+  }
+
+  /* ---------- spin ---------- */
+
+  function wedgeUnderPointer() {
+    const n = state.remaining.length;
+    const seg = TAU / n;
+    const a = ((-state.rotation % TAU) + TAU) % TAU;
+    return Math.min(n - 1, Math.floor(a / seg));
+  }
+
+  function spin() {
+    if (state.spinning || state.remaining.length === 0) return;
+    wakeAudio();
+    state.spinning = true;
+    setControls();
+
+    const n = state.remaining.length;
+    const seg = TAU / n;
+
+    const index = Math.floor(Math.random() * n);
+    const offset = 0.15 + Math.random() * 0.7;   // land inside the wedge, not dead centre
+
+    let target = -(index + offset) * seg;
+    target = ((target % TAU) + TAU) % TAU;
+    const turns = reduceMotion ? 1 : 5 + Math.floor(Math.random() * 4);
+    while (target < state.rotation + turns * TAU) target += TAU;
+
+    const start = state.rotation;
+    const dur = reduceMotion ? 700 : 4200 + Math.random() * 2000;
+    const t0 = performance.now();
+    let lastWedge = wedgeUnderPointer();
+
+    function frame(now) {
+      const t = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - t, 4);
+      state.rotation = start + (target - start) * eased;
+
+      const w = wedgeUnderPointer();
+      if (w !== lastWedge) { tick(); lastWedge = w; }
+
+      draw();
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        state.rotation %= TAU;
+        settle(index);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function settle(index) {
+    const id = state.remaining[index];
+    state.drawn.push(id);
+    state.remaining.splice(index, 1);
+    assignColors();
+    state.spinning = false;
+    renderAll();
+    $('result').innerHTML = '<span class="name">' + escapeHtml(nameOf(id)) + '</span>';
+  }
+
+  function undo() {
+    const id = state.drawn.pop();
+    if (id === undefined) return;
+    state.remaining.push(id);
+    assignColors();
+    renderAll();
+    $('result').innerHTML = '<span class="idle">Put ' + escapeHtml(nameOf(id)) + ' back on the wheel.</span>';
+  }
+
+  /* ---------- rendering ---------- */
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function renderAll() {
+    $('chips').innerHTML = state.players.map(p =>
+      '<span class="chip">' + escapeHtml(p.name) +
+      '<button type="button" data-id="' + p.id + '" aria-label="Remove ' + escapeHtml(p.name) + '">\u00d7</button></span>'
+    ).join('');
+
+    $('drawnList').innerHTML = state.drawn
+      .map(id => '<li>' + escapeHtml(nameOf(id)) + '</li>')
+      .join('');
+    $('history').hidden = state.drawn.length === 0;
+
+    $('tally').textContent = state.players.length
+      ? state.remaining.length + ' of ' + state.players.length + ' left'
+      : '';
+
+    setControls();
+    draw();
+  }
+
+  function setControls() {
+    const btn = $('spinBtn');
+    const started = state.drawn.length > 0;
+    const done = state.players.length > 0 && state.remaining.length === 0;
+
+    btn.disabled = state.spinning || state.remaining.length === 0;
+    btn.textContent = state.spinning ? 'Spinning' : done ? 'All drawn' : 'Spin';
+
+    $('setup').hidden = started;
+    $('editBtn').hidden = !started;
+    $('undoBtn').hidden = !started;
+    $('resetBtn').hidden = !started;
+
+    if (!started && !state.spinning) {
+      const need = state.players.length < 2;
+      const r = $('result');
+      if (!r.querySelector('.name')) {
+        r.innerHTML = '<span class="idle">' +
+          (need ? 'Add at least two players.' : 'Ready when you are.') + '</span>';
+      }
+    }
+  }
+
+  /* ---------- wiring ---------- */
+
+  $('nameInput').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    addNames(e.target.value);
+    e.target.value = '';
+  });
+
+  $('nameInput').addEventListener('paste', e => {
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if (text && /[,\n;]/.test(text)) {
+      e.preventDefault();
+      addNames(text);
+      e.target.value = '';
+    }
+  });
+
+  $('chips').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (b) removePlayer(Number(b.dataset.id));
+  });
+
+  $('spinBtn').addEventListener('click', spin);
+  $('undoBtn').addEventListener('click', undo);
+
+  $('editBtn').addEventListener('click', () => {
+    $('setup').hidden = !$('setup').hidden;
+    if (!$('setup').hidden) $('nameInput').focus();
+  });
+
+  $('resetBtn').addEventListener('click', () => {
+    state.remaining = state.players.map(p => p.id);
+    state.drawn = [];
+    state.rotation = 0;
+    assignColors();
+    $('result').innerHTML = '<span class="idle">Ready when you are.</span>';
+    renderAll();
+  });
+
+  $('soundBtn').addEventListener('click', e => {
+    state.sound = !state.sound;
+    e.target.textContent = state.sound ? 'Sound on' : 'Sound off';
+    if (state.sound) wakeAudio();
+  });
+
+  new ResizeObserver(sizeCanvas).observe(canvas);
+  document.fonts && document.fonts.ready.then(draw);
+  sizeCanvas();
+  renderAll();
+})();
+</script>
