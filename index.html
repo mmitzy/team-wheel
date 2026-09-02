@@ -1,405 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Name draw</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 
 <style>
   :root {
-    --court:  #14405C;
-    --court-deep: #0E2E43;
-    --ball-white: #F7F5F0;
-    --ball-blue:  #2E6FB7;
-    --ball-gold:  #F2B233;
-    --line:   #E2493A;
-    --ink:    #0B1F2C;
-    --muted:  rgba(247,245,240,.62);
-    --hair:   rgba(247,245,240,.18);
+    --bar:       #1e1e1e;
+    --surface:   #1e1e1e;
+    --panel:     #1b1b1b;
+    --line:      rgba(255,255,255,.14);
+    --line-soft: rgba(255,255,255,.08);
+    --text:      #ffffff;
+    --dim:       rgba(255,255,255,.68);
+    --faint:     rgba(255,255,255,.42);
+    --blue:      #2f6fe4;
+    --blue-hi:   #4b85ee;
+    --blue-soft: #7ea5ef;
+    --fab:       #2962ff;
+    --amber:     #e9b83c;
+    --pw:        clamp(316px, 26vw, 430px);
   }
 
   * { box-sizing: border-box; }
 
   html, body {
     margin: 0;
-    background: var(--court);
-    color: var(--ball-white);
-    font-family: Archivo, system-ui, sans-serif;
-    font-variation-settings: 'wdth' 100;
+    height: 100%;
+    color: var(--text);
+    font-family: Roboto, system-ui, -apple-system, sans-serif;
     -webkit-text-size-adjust: 100%;
   }
 
   body {
-    min-height: 100dvh;
-    padding: 20px 18px calc(28px + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 22px;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 95% at 10% -12%, #1e2d59 0%, rgba(30,45,89,0) 58%),
+      radial-gradient(115% 95% at 93% -8%,  #58212b 0%, rgba(88,33,43,0) 56%),
+      #0b0b0f;
   }
 
-  /* ---------- header ---------- */
-  header {
-    width: 100%;
-    max-width: 560px;
+  button { font: inherit; color: inherit; }
+  .icon { width: 22px; height: 22px; flex: none; display: block; }
+
+  /* ---------------- app bar ---------------- */
+  .appbar {
+    flex: none;
+    height: 56px;
+    background: var(--bar);
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.45);
+    z-index: 6;
   }
 
-  h1 {
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
     margin: 0;
-    font-size: 26px;
-    font-weight: 800;
-    font-variation-settings: 'wdth' 118, 'wght' 800;
-    letter-spacing: -.015em;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: .1px;
+    white-space: nowrap;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    cursor: default;
   }
+  .brand svg { width: 32px; height: 32px; flex: none; }
 
-  .tally {
-    font-size: 14px;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
+  .appbar .grow { flex: 1; }
 
-  /* ---------- roster setup ---------- */
-  .setup {
-    width: 100%;
-    max-width: 560px;
-    border: 1px solid var(--hair);
-    border-radius: 14px;
-    padding: 16px;
-    background: var(--court-deep);
-  }
-  .setup[hidden] { display: none; }
+  .navlist { display: flex; align-items: center; gap: 2px; }
 
-  .setup p {
-    margin: 0 0 12px;
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--muted);
-    max-width: 46ch;
-  }
-
-  .entry { display: flex; gap: 8px; }
-
-  input[type=text] {
-    flex: 1;
-    min-width: 0;
-    font: inherit;
-    font-size: 16px;
-    padding: 11px 13px;
-    border-radius: 10px;
-    border: 1px solid var(--hair);
-    background: rgba(0,0,0,.22);
-    color: var(--ball-white);
-  }
-  input[type=text]::placeholder { color: rgba(247,245,240,.4); }
-  input[type=text]:focus-visible { outline: 2px solid var(--ball-gold); outline-offset: 1px; }
-
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 14px;
-  }
-  .chips:empty { display: none; }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 14px;
-    padding: 6px 8px 6px 11px;
-    border-radius: 999px;
-    background: rgba(247,245,240,.1);
-  }
-  .chip button {
+  .navbtn {
     all: unset;
     cursor: pointer;
-    width: 19px;
-    height: 19px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .navbtn:hover { background: rgba(255,255,255,.1); }
+  .navbtn:focus-visible { outline: 2px solid var(--blue-hi); outline-offset: -2px; }
+  .navbtn .icon { opacity: .92; }
+
+  /* ---------------- main split ---------------- */
+  main {
+    flex: 1;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--pw);
+    min-height: 0;
+    transition: grid-template-columns .22s ease;
+  }
+  main.collapsed { grid-template-columns: minmax(0, 1fr) 0px; }
+
+  /* ---------------- wheel ---------------- */
+  .stage-wrap {
+    position: relative;
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    color: var(--muted);
-    font-size: 15px;
-    line-height: 1;
+    padding: 18px;
+    min-width: 0;
+    min-height: 0;
   }
-  .chip button:hover { background: rgba(247,245,240,.16); color: var(--ball-white); }
-  .chip button:focus-visible { outline: 2px solid var(--ball-gold); }
 
-  /* ---------- wheel ---------- */
+  .fab {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    width: 46px;
+    height: 46px;
+    border: none;
+    border-radius: 50%;
+    background: var(--fab);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,.5);
+    z-index: 3;
+  }
+  .fab:hover { background: #3d72ff; }
+  .fab:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
   .stage {
     position: relative;
-    width: 100%;
-    max-width: 420px;
+    width: min(100%, calc(100dvh - 118px));
     aspect-ratio: 1;
   }
-  canvas { width: 100%; height: 100%; display: block; }
+  canvas#wheel {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  canvas#wheel.busy { cursor: default; }
 
   .pointer {
     position: absolute;
-    top: -2px;
-    left: 50%;
-    width: 26px;
-    height: 34px;
-    margin-left: -13px;
-    background: var(--line);
-    clip-path: polygon(50% 100%, 0 0, 100% 0);
-    filter: drop-shadow(0 3px 4px rgba(0,0,0,.4));
+    top: 50%;
+    right: -1.5%;
+    width: clamp(42px, 8%, 74px);
+    aspect-ratio: 1.05;
+    transform: translateY(-50%);
+    background: linear-gradient(158deg, #fdfdfd 0%, #e9e9ea 44%, #a9aaae 100%);
+    clip-path: polygon(0 50%, 100% 3%, 100% 97%);
+    filter: drop-shadow(-3px 5px 5px rgba(0,0,0,.6));
     z-index: 2;
   }
 
-  .spin-hub {
+  .hub {
     position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 24%;
+    width: 20%;
     aspect-ratio: 1;
     border: none;
     border-radius: 50%;
-    background: var(--ball-gold);
-    color: var(--ink);
+    background: #fff;
     cursor: pointer;
-    font: inherit;
-    font-weight: 900;
-    font-variation-settings: 'wdth' 118, 'wght' 900;
-    font-size: clamp(13px, 3.4vw, 18px);
-    letter-spacing: .18em;
-    text-transform: uppercase;
     z-index: 3;
-    box-shadow: 0 6px 22px rgba(0,0,0,.35), 0 0 0 3px rgba(11,31,44,.45);
-    transition: transform .12s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,.35);
   }
-  .spin-hub[hidden] { display: none; }
-  .spin-hub:hover { transform: translate(-50%, -50%) scale(1.04); }
-  .spin-hub:active { transform: translate(-50%, -50%) scale(.97); }
-  .spin-hub:focus-visible { outline: 3px solid var(--ball-white); outline-offset: 4px; }
-  .spin-hub::before,
-  .spin-hub::after {
-    content: '';
+  .hub:focus-visible { outline: 3px solid var(--blue-hi); outline-offset: 4px; }
+  .hub[disabled] { cursor: default; }
+
+  .navbtn.icon-only { padding: 9px; }
+  .caret { width: 17px; height: 17px; opacity: .9; flex: none; }
+
+  .menu {
     position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 2px solid var(--ball-gold);
-    pointer-events: none;
-    animation: hubRing 1.8s ease-out infinite;
+    top: 52px;
+    background: #2a2a2a;
+    border-radius: 4px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.6);
+    padding: 6px 0;
+    min-width: 210px;
+    z-index: 9;
   }
-  .spin-hub::after { animation-delay: .9s; }
-  @keyframes hubRing {
-    0%   { transform: scale(1);   opacity: .75; }
-    100% { transform: scale(1.7); opacity: 0; }
+  .menu[hidden] { display: none; }
+  .menu-item {
+    all: unset;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    padding: 11px 18px;
+    font-size: 14.5px;
+    color: #fff;
   }
-  @media (prefers-reduced-motion: reduce) {
-    .spin-hub::before,
-    .spin-hub::after { animation: none; opacity: 0; }
-    .spin-hub:hover,
-    .spin-hub:active { transform: translate(-50%, -50%); }
+  .menu-item:hover { background: rgba(255,255,255,.1); }
+  .menu-item:focus-visible { outline: 2px solid var(--blue-hi); outline-offset: -2px; }
+
+  .split-caret {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid rgba(255,255,255,.4);
   }
 
-  /* ---------- result + controls ---------- */
-  .result {
-    width: 100%;
-    max-width: 560px;
-    min-height: 62px;
-    text-align: center;
+  .check {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14.5px;
+    color: var(--text);
+    cursor: pointer;
+    flex: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .check input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .check .box {
+    width: 19px;
+    height: 19px;
+    border: 2px solid rgba(255,255,255,.72);
+    border-radius: 2px;
     display: grid;
-    place-content: center;
-    gap: 3px;
+    place-items: center;
   }
-  .result .name {
-    font-size: clamp(30px, 9vw, 46px);
-    font-weight: 900;
-    font-variation-settings: 'wdth' 124, 'wght' 900;
-    letter-spacing: -.02em;
-    line-height: 1;
-  }
-  .result .idle { font-size: 15px; color: var(--muted); }
+  .check .box svg { width: 15px; height: 15px; opacity: 0; }
+  .check input:checked + .box { background: var(--blue); border-color: var(--blue); }
+  .check input:checked + .box svg { opacity: 1; }
+  .check input:focus-visible + .box { outline: 2px solid var(--blue-hi); outline-offset: 2px; }
 
-  .controls {
-    width: 100%;
-    max-width: 560px;
+  .addwheel { flex: none; display: flex; }
+  .addwheel .btn { padding: 12px 18px; font-size: 15px; }
+
+  .panel-foot .link {
+    all: unset;
+    color: var(--blue-soft);
+    text-decoration: underline;
+    cursor: pointer;
+    white-space: nowrap;
+    flex: none;
+  }
+  .panel-foot .link:hover { color: #a8c3f6; }
+  .panel-foot .link:focus-visible { outline: 2px solid var(--blue-hi); outline-offset: 2px; }
+  .panel-foot #footLeft { overflow: hidden; text-overflow: ellipsis; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ---------------- side panel ---------------- */
+  .panel-toggle {
+    position: absolute;
+    top: 18px;
+    right: calc(var(--pw) - 19px);
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: var(--fab);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 7px rgba(0,0,0,.5);
+    z-index: 5;
+    transition: right .22s ease;
+  }
+  .panel-toggle:hover { background: #3d72ff; }
+  .panel-toggle:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .panel-toggle svg { transition: transform .22s ease; }
+  main.collapsed .panel-toggle { right: 14px; }
+  main.collapsed .panel-toggle svg { transform: rotate(180deg); }
+
+  .panel {
+    background: var(--panel);
+    border-left: 1px solid rgba(255,255,255,.12);
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .tabs { display: flex; flex: none; border-bottom: 1px solid var(--line-soft); }
+  .tab {
+    all: unset;
+    cursor: pointer;
+    flex: 1;
+    display: flex;
     align-items: center;
-    gap: 12px;
-  }
-
-  .spin {
-    all: unset;
-    cursor: pointer;
-    width: 100%;
-    max-width: 300px;
-    text-align: center;
-    padding: 17px;
-    border-radius: 999px;
-    background: var(--ball-gold);
-    color: var(--ink);
-    font-size: 19px;
-    font-weight: 800;
-    font-variation-settings: 'wdth' 115, 'wght' 800;
-  }
-  .spin:focus-visible { outline: 3px solid var(--ball-white); outline-offset: 3px; }
-  .spin[disabled] { cursor: default; background: rgba(247,245,240,.14); color: var(--muted); }
-
-  .minor { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
-  .minor button {
-    all: unset;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--muted);
-    border-bottom: 1px solid var(--hair);
-    padding-bottom: 1px;
-  }
-  .minor button:hover { color: var(--ball-white); border-bottom-color: currentColor; }
-  .minor button:focus-visible { outline: 2px solid var(--ball-gold); outline-offset: 3px; }
-  .minor button[hidden] { display: none; }
-
-  /* ---------- drawn so far ---------- */
-  .history {
-    width: 100%;
-    max-width: 560px;
-    border: 1px solid var(--hair);
-    border-radius: 14px;
-    padding: 14px 16px;
-    background: var(--court-deep);
-  }
-  .history[hidden] { display: none; }
-
-  .history h2 {
-    margin: 0 0 10px;
+    justify-content: center;
+    gap: 9px;
+    padding: 16px 8px 13px;
     font-size: 15px;
-    font-weight: 800;
-    font-variation-settings: 'wdth' 112, 'wght' 800;
+    font-weight: 500;
+    color: var(--faint);
+    border-bottom: 2px solid transparent;
+  }
+  .tab:hover { color: var(--dim); background: rgba(255,255,255,.04); }
+  .tab:focus-visible { outline: 2px solid var(--blue-hi); outline-offset: -3px; }
+  .tab[aria-selected="true"] { color: #fff; border-bottom-color: #fff; }
+  .pill {
+    display: inline-grid;
+    place-items: center;
+    min-width: 26px;
+    height: 21px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
   }
 
-  .history ol {
-    margin: 0;
-    padding-left: 22px;
-    font-size: 16px;
-    line-height: 1.8;
-    columns: 2;
-    column-gap: 24px;
+  .pane {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 14px 12px;
   }
-  .history li::marker { color: var(--muted); font-size: 12px; }
+  .pane[hidden] { display: none; }
 
-  /* ---------- composer (long-press the title) ---------- */
-  .composer {
-    width: 100%;
-    max-width: 560px;
-    border: 1px solid var(--ball-gold);
-    border-radius: 14px;
-    padding: 16px;
-    background: var(--court-deep);
+  .toolbar { display: flex; gap: 7px; flex-wrap: wrap; flex: none; }
+
+  .btn {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 11px;
+    border-radius: 4px;
+    background: var(--blue);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
   }
-  .composer[hidden] { display: none; }
+  .btn:hover { background: var(--blue-hi); }
+  .btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .btn[disabled] { cursor: default; opacity: .45; box-shadow: none; }
+  .btn[disabled]:hover { background: var(--blue); }
+  .btn .icon { width: 19px; height: 19px; }
+  .btn.plain { background: transparent; box-shadow: none; color: var(--dim); }
+  .btn.plain:hover { background: rgba(255,255,255,.1); color: #fff; }
 
-  .composer p {
-    margin: 0 0 12px;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--muted);
-    max-width: 52ch;
-  }
-
-  .composer textarea {
+  textarea#entries {
+    flex: 1;
+    min-height: 160px;
     width: 100%;
     font: inherit;
     font-size: 15px;
-    line-height: 1.6;
-    padding: 11px 13px;
-    border-radius: 10px;
-    border: 1px solid var(--hair);
-    background: rgba(0,0,0,.22);
-    color: var(--ball-white);
-    resize: vertical;
-    min-height: 130px;
+    line-height: 1.75;
+    padding: 12px 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.38);
+    background: #0e0e0e;
+    color: #fff;
+    resize: none;
   }
-  .composer textarea:focus-visible { outline: 2px solid var(--ball-gold); outline-offset: 1px; }
+  textarea#entries:hover { border-color: rgba(255,255,255,.6); }
+  textarea#entries:focus-visible { outline: none; border-color: var(--blue-hi); box-shadow: inset 0 0 0 1px var(--blue-hi); }
 
-  .composer .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
-
-  .composer .go {
-    all: unset;
-    cursor: pointer;
-    padding: 10px 16px;
+  .results {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .results li {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px 12px;
+    border-radius: 4px;
+    background: rgba(255,255,255,.06);
+    font-size: 15px;
+  }
+  .results li.gone { color: var(--faint); }
+  .results .pos {
+    flex: none;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    display: grid;
+    place-items: center;
     border-radius: 999px;
-    background: var(--ball-gold);
-    color: var(--ink);
+    background: rgba(255,255,255,.14);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .empty { margin: 0; font-size: 14px; color: var(--faint); }
+
+  .panel-foot {
+    flex: none;
+    border-top: 1px solid var(--line-soft);
+    padding: 13px 16px;
     font-size: 14px;
-    font-weight: 800;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    white-space: nowrap;
+    overflow: hidden;
   }
-  .composer .go:focus-visible { outline: 3px solid var(--ball-white); outline-offset: 2px; }
 
-  .composer .status { font-size: 13px; color: var(--muted); }
-
-  .composer .out {
-    margin-top: 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    word-break: break-all;
-    color: var(--ball-gold);
-  }
-  .composer .out:empty { display: none; }
-
-  h1 { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-
-  /* ---------- winner celebration ---------- */
-  .celebration {
+  /* ---------------- winner dialog ---------------- */
+  .scrim {
     position: fixed;
     inset: 0;
     z-index: 20;
-    background: rgba(11,31,44,.82);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,.55);
     display: grid;
     place-items: center;
-    padding: 32px 20px;
-    animation: celebFade .25s ease;
+    padding: 24px;
+    animation: fade .18s ease;
   }
-  .celebration[hidden] { display: none; }
+  .scrim[hidden] { display: none; }
 
-  .celebration-inner {
-    display: grid;
-    gap: 22px;
-    justify-items: center;
+  .dialog {
+    width: min(900px, 100%);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: 0 16px 48px rgba(0,0,0,.6);
+    animation: pop .22s ease;
+  }
+  .dialog-head {
+    background: var(--amber);
+    color: #111;
+    font-size: clamp(20px, 2.4vw, 27px);
+    font-weight: 700;
+    padding: 18px 24px;
+  }
+  .dialog-body {
+    padding: 34px 24px 12px;
     text-align: center;
-    max-width: 100%;
   }
-  .celebration-label {
-    font-size: 13px;
-    letter-spacing: .35em;
-    text-transform: uppercase;
-    color: var(--ball-gold);
-    font-weight: 800;
-    font-variation-settings: 'wdth' 112, 'wght' 800;
-  }
-  .celebration-name {
-    font-size: clamp(46px, 13vw, 112px);
-    font-weight: 900;
-    font-variation-settings: 'wdth' 125, 'wght' 900;
-    letter-spacing: -.025em;
-    line-height: 1;
-    color: var(--ball-white);
-    max-width: 100%;
+  .winner-name {
+    font-size: clamp(38px, 7vw, 68px);
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: .5px;
     overflow-wrap: anywhere;
-    animation: celebPop .55s cubic-bezier(.34, 1.56, .64, 1);
   }
-  .celebration-close {
-    all: unset;
-    cursor: pointer;
-    padding: 14px 34px;
-    border-radius: 999px;
-    background: var(--ball-gold);
-    color: var(--ink);
-    font-size: 16px;
-    font-weight: 800;
-    font-variation-settings: 'wdth' 115, 'wght' 800;
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px 18px;
+    flex-wrap: wrap;
   }
-  .celebration-close:focus-visible { outline: 3px solid var(--ball-white); outline-offset: 3px; }
+  .dialog-actions .btn.soft { background: var(--blue-soft); color: #10203c; }
+  .dialog-actions .btn.soft:hover { background: #92b4f3; }
+
+  /* ---------------- toast ---------------- */
+  .toast {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    z-index: 30;
+    background: #2f2f2f;
+    color: #fff;
+    font-size: 14px;
+    padding: 13px 18px;
+    border-radius: 4px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+    animation: fade .18s ease;
+  }
+  .toast[hidden] { display: none; }
 
   .confetti {
     position: fixed;
@@ -411,79 +511,257 @@
   }
   .confetti[hidden] { display: none; }
 
-  @keyframes celebFade {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+  /* ---------------- composer (long-press the title) ---------------- */
+  .composer {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 25;
+    width: min(620px, calc(100% - 32px));
+    background: var(--surface);
+    border: 1px solid var(--blue);
+    border-radius: 6px;
+    box-shadow: 0 16px 48px rgba(0,0,0,.6);
+    padding: 18px;
   }
-  @keyframes celebPop {
-    0%   { transform: scale(.6);  opacity: 0; }
-    60%  { transform: scale(1.06); opacity: 1; }
-    100% { transform: scale(1);    opacity: 1; }
+  .composer[hidden] { display: none; }
+  .composer p { margin: 0 0 12px; font-size: 13px; line-height: 1.55; color: var(--dim); }
+  .composer textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 11px 13px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.38);
+    background: rgba(0,0,0,.3);
+    color: #fff;
+    resize: vertical;
+    min-height: 130px;
   }
+  .composer .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .composer .status { font-size: 13px; color: var(--dim); }
+  .composer .out {
+    margin-top: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    word-break: break-all;
+    color: var(--blue-soft);
+  }
+  .composer .out:empty { display: none; }
 
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
-    .celebration { animation: none; }
-    .celebration-name { animation: none; }
+    .scrim, .dialog, .toast { animation: none; }
+    main, .panel-toggle, .panel-toggle svg { transition: none; }
   }
 
-  @media (max-width: 380px) {
-    .history ol { columns: 1; }
+  /* ---------------- responsive ---------------- */
+  @media (max-width: 1320px) {
+    .navbtn span { display: none; }
+    .navbtn { padding: 9px; }
+  }
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    main, main.collapsed { grid-template-columns: minmax(0, 1fr); }
+    .panel { border-left: none; border-top: 1px solid var(--line-soft); min-height: 400px; }
+    .panel-toggle { display: none; }
+    .stage { width: min(100%, 78vw, 520px); }
+    .brand span { font-size: 17px; }
+  }
+  @media (max-width: 560px) {
+    .appbar { padding: 0 8px; gap: 4px; }
+    .brand svg { width: 28px; height: 28px; }
+    .stage-wrap { padding: 12px; }
+    .fab { top: 10px; left: 10px; width: 40px; height: 40px; }
   }
 </style>
+<script>
+// Surfaces a script failure instead of leaving a silently blank page.
+window.addEventListener('error', e => {
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#c92a2a;color:#fff;' +
+    'font:14px/1.45 system-ui,sans-serif;padding:10px 16px';
+  bar.textContent = 'Script error: ' + e.message + (e.lineno ? ' (line ' + e.lineno + ')' : '');
+  (document.body || document.documentElement).appendChild(bar);
+});
+</script>
+</head>
+<body>
+<header class="appbar">
+  <h1 class="brand" id="title">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 16 L16 2 A14 14 0 0 1 30 16 Z" fill="#f4c20d"/>
+      <path d="M16 16 L30 16 A14 14 0 0 1 16 30 Z" fill="#3cba54"/>
+      <path d="M16 16 L16 30 A14 14 0 0 1 2 16 Z" fill="#4885ed"/>
+      <path d="M16 16 L2 16 A14 14 0 0 1 16 2 Z" fill="#db3236"/>
+      <path d="M21.5 16 L31 10.6 L31 21.4 Z" fill="#fff"/>
+      <circle cx="16" cy="16" r="5.2" fill="#fff"/>
+    </svg>
+    <span>Name draw</span>
+  </h1>
 
-<header>
-  <h1 id="title">Name draw</h1>
-  <span class="tally" id="tally"></span>
+  <span class="grow"></span>
+
+  <nav class="navlist">
+    <button class="navbtn" id="navCustomize" type="button">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M12 3.2c-4.9 0-8.8 3.6-8.8 8.1s3.9 8.1 8.8 8.1c.9 0 1.6-.7 1.6-1.6 0-.4-.15-.8-.4-1.1-.25-.3-.4-.6-.4-1 0-.9.7-1.6 1.6-1.6h1.9c2.7 0 4.9-2.1 4.9-4.7 0-3.9-3.9-6.2-9.2-6.2Z"/>
+        <circle cx="7.3" cy="11.6" r="1.15" fill="currentColor" stroke="none"/>
+        <circle cx="10" cy="7.9" r="1.15" fill="currentColor" stroke="none"/>
+        <circle cx="14.3" cy="7.9" r="1.15" fill="currentColor" stroke="none"/>
+        <circle cx="17.2" cy="11.1" r="1.15" fill="currentColor" stroke="none"/>
+      </svg>
+      <span>Customize</span>
+    </button>
+    <button class="navbtn" id="navNew" type="button">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Zm0 2.4L16.6 8H14V5.4Z"/></svg>
+      <span>New</span>
+    </button>
+    <button class="navbtn" id="navOpen" type="button">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2Z"/></svg>
+      <span>Open</span>
+    </button>
+    <button class="navbtn" id="navSave" type="button">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4Zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm3-10H6V5h9v4Z"/></svg>
+      <span>Save</span>
+    </button>
+    <button class="navbtn" id="navShare" type="button">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="18" cy="5" r="2.7"/><circle cx="6" cy="12" r="2.7"/><circle cx="18" cy="19" r="2.7"/>
+        <path d="M8.5 10.7 15.5 6.7M8.5 13.3l7 4" stroke="currentColor" stroke-width="1.8" fill="none"/>
+      </svg>
+      <span>Share</span>
+    </button>
+    <button class="navbtn" id="navGallery" type="button">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 21 21"/></svg>
+      <span>Gallery</span>
+    </button>
+    <button class="navbtn icon-only" id="navFull" type="button" aria-label="Fullscreen">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg>
+    </button>
+    <button class="navbtn" id="navMore" type="button" aria-haspopup="true" aria-expanded="false">
+      <span>More</span>
+      <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>
+    </button>
+    <button class="navbtn" id="navLang" type="button">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.7" ry="8.6"/><path d="M3.6 9.4h16.8M3.6 14.6h16.8"/></svg>
+      <span>English</span>
+    </button>
+  </nav>
+
+  <div class="menu" id="moreMenu" hidden role="menu">
+    <button class="menu-item" id="menuSound" type="button" role="menuitem">Sound: on</button>
+    <button class="menu-item" id="menuReset" type="button" role="menuitem">Put everyone back</button>
+    <button class="menu-item" id="menuFull" type="button" role="menuitem">Fullscreen</button>
+  </div>
 </header>
 
-<section class="setup" id="setup">
-  <p>Type a name and press enter. Pasting a whole list separated by commas or line breaks works too.</p>
-  <div class="entry">
-    <input type="text" id="nameInput" placeholder="Name" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Name">
+<main id="main">
+  <section class="stage-wrap">
+    <button class="fab" id="editFab" type="button" title="Edit entries" aria-label="Edit entries">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25ZM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>
+    </button>
+
+    <div class="stage">
+      <canvas id="wheel"></canvas>
+      <div class="pointer" id="pointer" aria-hidden="true"></div>
+      <button type="button" class="hub" id="hub" aria-label="Spin the wheel"></button>
+    </div>
+    <p class="sr-only" id="live" aria-live="polite"></p>
+  </section>
+
+  <button class="panel-toggle" id="panelToggle" type="button" aria-label="Hide the entries panel" aria-expanded="true">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+  </button>
+
+  <aside class="panel" id="panel">
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabEntries" role="tab" aria-selected="true" aria-controls="paneEntries" type="button">
+        Entries <span class="pill" id="entriesCount">0</span>
+      </button>
+      <button class="tab" id="tabResults" role="tab" aria-selected="false" aria-controls="paneResults" type="button">
+        Results <span class="pill" id="resultsCount">0</span>
+      </button>
+    </div>
+
+    <div class="pane" id="paneEntries" role="tabpanel" aria-labelledby="tabEntries">
+      <div class="toolbar">
+        <button class="btn" id="shuffleBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.6l3 4.4M14.4 16.6H18M3 17h3.6l7-10H18"/><path d="M15.8 4.3 18.6 7l-2.8 2.7M15.8 14.3l2.8 2.7-2.8 2.7"/></svg>
+          Shuffle
+        </button>
+        <button class="btn" id="sortBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4M7 4 4 7.4M7 4l3 3.4M17 4v16M17 20l-3-3.4M17 20l3-3.4"/></svg>
+          Sort
+        </button>
+        <button class="btn" id="addImageBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.4" cy="10" r="1.5"/><path d="m5.4 17.2 4.3-4.7L13 16.1l2.4-2.2 3.3 3.3"/></svg>
+          Add image
+          <span class="split-caret"><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span>
+        </button>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" id="advanced">
+        <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+        Advanced
+      </label>
+
+      <textarea id="entries" spellcheck="false" autocapitalize="words" autocomplete="off" placeholder="One name per line" aria-label="Entries, one name per line"></textarea>
+
+      <div class="addwheel">
+        <button class="btn" id="addWheelBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add wheel
+          <span class="split-caret"><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="pane" id="paneResults" role="tabpanel" aria-labelledby="tabResults" hidden>
+      <ol class="results" id="drawnList"></ol>
+      <p class="empty" id="resultsEmpty">Nothing drawn yet.</p>
+      <div class="toolbar">
+        <button class="btn" id="undoBtn" type="button">Undo last</button>
+        <button class="btn plain" id="resetBtn" type="button">Put everyone back</button>
+      </div>
+    </div>
+
+    <div class="panel-foot">
+      <span id="footLeft">Version 426</span>
+      <button type="button" class="link" id="changelog">Changelog</button>
+    </div>
+  </aside>
+</main>
+
+<div class="scrim" id="winner" hidden role="dialog" aria-modal="true" aria-labelledby="winnerName">
+  <div class="dialog">
+    <div class="dialog-head">We have a winner!</div>
+    <div class="dialog-body">
+      <div class="winner-name" id="winnerName"></div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn plain" id="winClose">Close</button>
+      <button type="button" class="btn soft" id="winRemove">Remove</button>
+      <button type="button" class="btn" id="winRemoveAll">Remove all instances</button>
+    </div>
   </div>
-  <div class="chips" id="chips"></div>
-</section>
-
-<div class="stage">
-  <div class="pointer"></div>
-  <canvas id="wheel"></canvas>
-  <button type="button" class="spin-hub" id="spinHub" hidden aria-label="Spin the wheel">Spin</button>
 </div>
 
-<div class="result" id="result" aria-live="polite">
-  <span class="idle">Add at least two names.</span>
-</div>
-
-<div class="controls">
-  <button class="spin" id="spinBtn" disabled>Spin</button>
-  <div class="minor">
-    <button id="editBtn" hidden>Edit names</button>
-    <button id="undoBtn" hidden>Undo last</button>
-    <button id="resetBtn" hidden>Start over</button>
-    <button id="soundBtn">Sound on</button>
-  </div>
-</div>
-
-<section class="history" id="history" hidden>
-  <h2>Drawn so far</h2>
-  <ol id="drawnList"></ol>
-</section>
-
-<div class="celebration" id="celebration" hidden aria-live="assertive" role="dialog" aria-modal="true" aria-labelledby="celebrationName">
-  <div class="celebration-inner">
-    <span class="celebration-label">Winner</span>
-    <span class="celebration-name" id="celebrationName"></span>
-    <button type="button" class="celebration-close" id="celebrationClose">Continue</button>
-  </div>
-</div>
 <canvas class="confetti" id="confetti" aria-hidden="true" hidden></canvas>
+<div class="toast" id="toast" hidden aria-live="polite"></div>
 
 <section class="composer" id="composer" hidden>
   <p>One name per line, in the order they should come out. A blank line or a single dash leaves that slot genuinely random. Trailing blanks are ignored. Names must match the roster exactly, apart from case.</p>
   <textarea id="orderText" spellcheck="false" autocapitalize="words" aria-label="Draw order"></textarea>
   <div class="row">
-    <button type="button" class="go" id="makeLink">Build link</button>
-    <button type="button" class="go" id="applyNow">Apply here</button>
+    <button type="button" class="btn" id="makeLink">Build link</button>
+    <button type="button" class="btn" id="applyNow">Apply here</button>
+    <button type="button" class="btn plain" id="closeComposer">Close</button>
     <span class="status" id="composerStatus"></span>
   </div>
   <div class="out" id="linkOut"></div>
@@ -493,14 +771,18 @@
 (() => {
   'use strict';
 
+  const __boot = () => {
+
   const TAU = Math.PI * 2;
-  const PALETTE = ['#F7F5F0', '#2E6FB7', '#F2B233'];
-  const LABEL_INK = ['#0B1F2C', '#F7F5F0', '#0B1F2C'];
+  const PALETTE   = ['#db3236', '#f4c20d', '#3cba54', '#4885ed'];
+  const LABEL_INK = ['#ffffff', '#1a1a1a', '#1a1a1a', '#ffffff'];
+  const STORE_KEY = 'namedraw.entries';
 
   const state = {
-    names: [],       // {id, name}
-    remaining: [],   // ids, in wheel order
-    drawn: [],       // ids, in the order they came out
+    names: [],      // {id, name} in list order; duplicates allowed
+    removed: [],    // ids taken off the wheel
+    results: [],    // ids in the order they were spun
+    wheel: [],      // ids currently on the wheel (derived from names + removed)
     rotation: 0,
     spinning: false,
     sound: true,
@@ -537,67 +819,128 @@
     return new TextDecoder().decode(bytes);
   }
 
-  function loadOrder() {
+  /* Reads both params, then strips only ?c= so a shared ?w= link survives. */
+  function loadFromUrl() {
+    const q = new URLSearchParams(location.search);
+    let shared = null;
+
     try {
-      const raw = new URLSearchParams(location.search).get('c');
+      const raw = q.get('c');
       if (raw) {
         const parsed = JSON.parse(b64decode(raw));
         if (Array.isArray(parsed)) order = parsed;
       }
-    } catch (e) {
-      order = [];
+    } catch (e) { order = []; }
+
+    try {
+      const w = q.get('w');
+      if (w) {
+        const parsed = JSON.parse(b64decode(w));
+        if (Array.isArray(parsed)) shared = parsed.filter(x => typeof x === 'string');
+      }
+    } catch (e) { shared = null; }
+
+    if (q.has('c')) {
+      q.delete('c');
+      const rest = q.toString();
+      try { history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '')); } catch (e) {}
     }
-    // Leave a clean address bar regardless of what came in.
-    if (location.search) {
-      try { history.replaceState(null, '', location.pathname); } catch (e) {}
-    }
+    return shared;
   }
 
   /* The one place a winner is chosen. Falls through to real randomness
      whenever the slot is empty or the named entry is already off the wheel. */
   function pickIndex(n) {
-    const want = order[state.drawn.length];
+    const want = order[state.results.length];
     if (want) {
       const target = String(want).trim().toLowerCase();
-      const i = state.remaining.findIndex(id => nameOf(id).trim().toLowerCase() === target);
+      const i = state.wheel.findIndex(id => nameOf(id).trim().toLowerCase() === target);
       if (i !== -1) return i;
     }
     return Math.floor(Math.random() * n);
   }
 
-  /* ---------- roster ---------- */
+  /* ---------- roster ----------
+     The textarea is the roster: one entry per line, duplicates allowed
+     (a name listed twice simply gets two slices). Re-reading it hands the
+     same ids back to unchanged lines, so results and removals survive edits. */
 
-  function addNames(raw) {
-    const parts = raw.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
-    for (const name of parts) {
-      if (state.names.some(p => p.name.toLowerCase() === name.toLowerCase())) continue;
-      const p = { id: nextId++, name: name.slice(0, 24) };
-      state.names.push(p);
-      state.remaining.push(p.id);
+  function readEntries(raw) {
+    const lines = raw.split('\n').map(s => s.trim()).filter(Boolean).map(s => s.slice(0, 32));
+
+    const pool = new Map();
+    for (const p of state.names) {
+      const k = p.name.toLowerCase();
+      if (!pool.has(k)) pool.set(k, []);
+      pool.get(k).push(p.id);
     }
-    assignColors();
+
+    const names = lines.map(name => {
+      const q = pool.get(name.toLowerCase());
+      return { id: (q && q.length) ? q.shift() : nextId++, name };
+    });
+
+    const live = new Set(names.map(p => p.id));
+    state.names = names;
+    state.removed = state.removed.filter(id => live.has(id));
+    state.results = state.results.filter(id => live.has(id));
+
+    rebuildWheel();
     renderAll();
   }
 
-  function removeName(id) {
-    state.names = state.names.filter(p => p.id !== id);
-    state.remaining = state.remaining.filter(x => x !== id);
-    state.drawn = state.drawn.filter(x => x !== id);
+  /* The wheel is the entry list in order, minus anyone taken off it. */
+  function rebuildWheel() {
+    const gone = new Set(state.removed);
+    state.wheel = state.names.filter(p => !gone.has(p.id)).map(p => p.id);
     assignColors();
-    renderAll();
   }
 
-  /* Cycle the three ball colors, avoiding a seam where the last wedge
-     touches the first with the same fill. */
+  function entriesText() {
+    return state.names.map(p => p.name).join('\n');
+  }
+
+  function syncTextarea() {
+    const ta = $('entries');
+    if (document.activeElement === ta) return;   // never fight the cursor
+    const text = entriesText();
+    if (ta.value !== text) ta.value = text;
+  }
+
+  /* Cycle the four colors, avoiding a seam where the last wedge touches
+     the first with the same fill. */
   function assignColors() {
-    const n = state.remaining.length;
-    colors = Array.from({ length: n }, (_, i) => i % 3);
+    const n = state.wheel.length;
+    const k = PALETTE.length;
+    colors = Array.from({ length: n }, (_, i) => i % k);
     if (n > 2 && colors[n - 1] === colors[0]) {
-      colors[n - 1] = [0, 1, 2].find(c => c !== colors[n - 2] && c !== colors[0]);
+      for (let c = 0; c < k; c++) {
+        if (c !== colors[n - 2] && c !== colors[0]) { colors[n - 1] = c; break; }
+      }
     }
   }
 
   /* ---------- canvas ---------- */
+
+  /* The pointer wears the colour of whatever wedge sits under it, so it reads
+     as part of the wheel rather than as a fixed marker. */
+  const pointerEl = $('pointer');
+  let pointerPaint = null;
+
+  function shade(hex, amt) {
+    const v = parseInt(hex.slice(1), 16);
+    let r = (v >> 16) & 255, g = (v >> 8) & 255, b = v & 255;
+    if (amt >= 0) { r += (255 - r) * amt; g += (255 - g) * amt; b += (255 - b) * amt; }
+    else { r *= 1 + amt; g *= 1 + amt; b *= 1 + amt; }
+    return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+  }
+
+  function paintPointer(hex) {
+    if (hex === pointerPaint) return;
+    pointerPaint = hex;
+    pointerEl.style.background =
+      `linear-gradient(158deg, ${shade(hex, .42)} 0%, ${hex} 44%, ${shade(hex, -.45)} 100%)`;
+  }
 
   function sizeCanvas() {
     const rect = canvas.getBoundingClientRect();
@@ -611,24 +954,38 @@
   function draw() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     const cx = w / 2, cy = h / 2;
-    const r = Math.min(w, h) / 2 - 6;
-    const n = state.remaining.length;
+    const size = Math.min(w, h);
+    const r = size / 2 - size * 0.035;
+    const n = state.wheel.length;
 
     ctx.clearRect(0, 0, w, h);
 
+    // the wheel sits on a soft drop shadow
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, TAU);
+    ctx.fillStyle = n === 0 ? 'rgba(255,255,255,.04)' : '#111';
+    ctx.shadowColor = 'rgba(0,0,0,.55)';
+    ctx.shadowBlur = size * 0.045;
+    ctx.shadowOffsetY = size * 0.012;
+    ctx.fill();
+    ctx.restore();
+
     if (n === 0) {
+      paintPointer('#e9e9ea');
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, TAU);
-      ctx.strokeStyle = 'rgba(247,245,240,.2)';
+      ctx.arc(cx, cy, r - 2, 0, TAU);
+      ctx.strokeStyle = 'rgba(255,255,255,.28)';
       ctx.lineWidth = 2;
-      ctx.setLineDash([7, 9]);
+      ctx.setLineDash([9, 11]);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(247,245,240,.45)';
-      ctx.font = "500 15px Archivo, system-ui, sans-serif";
+
+      ctx.fillStyle = 'rgba(255,255,255,.5)';
+      ctx.font = '400 16px Roboto, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(state.names.length ? 'Everyone drawn' : 'Add names', cx, cy);
+      ctx.fillText(state.names.length ? 'Everyone has been removed' : 'Add names in the panel', cx, cy + r * 0.42);
       return;
     }
 
@@ -636,60 +993,69 @@
     // Font is bounded by the wedge's tangential thickness at label mid-radius,
     // so text never bleeds into neighbouring wedges no matter how many entries.
     const arcThickness = r * 0.55 * seg;
-    const fontSize = Math.min(21, arcThickness * 0.72);
-    const showLabels = fontSize >= 5.5;
-    const strokeAlpha = n > 200 ? 0 : n > 80 ? 0.14 : 0.28;
-    const strokeWidth = n > 300 ? 0 : n > 80 ? 0.6 : n > 40 ? 1 : 1.5;
+    const maxW = r * 0.72;                       // radial room a label may use
+    // Start from the wedge's tangential thickness, so the type shrinks as
+    // entries are added, then hold it under a share of the radius so a
+    // near-empty wheel does not end up with absurd type.
+    let fontSize = Math.min(arcThickness * 0.72, r * 0.26);
+    // One size for the whole wheel: shrink until the longest entry fits.
+    ctx.font = `600 ${fontSize}px Quicksand, Roboto, system-ui, sans-serif`;
+    let widest = 0;
+    for (const id of state.wheel) {
+      const wLab = ctx.measureText(nameOf(id)).width;
+      if (wLab > widest) widest = wLab;
+    }
+    if (widest > maxW) fontSize *= maxW / widest;
+    const showLabels = fontSize >= 5;
 
+    // Wedges first, meeting edge to edge with no divider between them.
     for (let i = 0; i < n; i++) {
-      const a0 = i * seg - Math.PI / 2 + state.rotation;
-      const ci = colors[i] ?? (i % 3);
-
+      const a0 = i * seg + state.rotation;         // pointer sits at 3 o'clock
+      const ci = colors[i] ?? (i % PALETTE.length);
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, r, a0, a0 + seg);
+      ctx.arc(cx, cy, r, a0, a0 + seg + 0.004);    // hairline overlap kills seams
       ctx.closePath();
       ctx.fillStyle = PALETTE[ci];
       ctx.fill();
-      if (strokeAlpha > 0) {
-        ctx.strokeStyle = `rgba(11,31,44,${strokeAlpha})`;
-        ctx.lineWidth = strokeWidth;
-        ctx.stroke();
-      }
-
-      if (!showLabels) continue;
-
-      // label, reading outward along the wedge
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(a0 + seg / 2);
-      ctx.fillStyle = LABEL_INK[ci];
-      ctx.font = `700 ${fontSize}px Archivo, system-ui, sans-serif`;
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      let label = nameOf(state.remaining[i]);
-      const maxW = r - fontSize * 2.2;
-      while (label.length > 1 && ctx.measureText(label).width > maxW) {
-        label = label.slice(0, -1);
-      }
-      ctx.fillText(label, r - fontSize * 0.75, 0);
-      ctx.restore();
     }
 
-    // hub
+    // A soft sheen near the middle and a darker rim give the disc some depth.
+    const shade = ctx.createRadialGradient(cx, cy, r * 0.12, cx, cy, r);
+    shade.addColorStop(0,    'rgba(255,255,255,.035)');
+    shade.addColorStop(0.55, 'rgba(255,255,255,0)');
+    shade.addColorStop(0.92, 'rgba(0,0,0,.02)');
+    shade.addColorStop(1,    'rgba(0,0,0,.09)');
     ctx.beginPath();
-    ctx.arc(cx, cy, Math.max(24, r * 0.15), 0, TAU);
-    ctx.fillStyle = '#0E2E43';
+    ctx.arc(cx, cy, r, 0, TAU);
+    ctx.fillStyle = shade;
     ctx.fill();
-    ctx.strokeStyle = 'rgba(247,245,240,.55)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
 
-    ctx.fillStyle = '#F7F5F0';
-    ctx.font = `800 ${Math.max(15, r * 0.115)}px Archivo, system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(n), cx, cy + 1);
+    // Labels last so the shading never dulls them. Each one reads outward from
+    // the hub, the way the reference wheel sets its text.
+    if (showLabels) {
+      ctx.font = `600 ${fontSize}px Quicksand, Roboto, system-ui, sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i < n; i++) {
+        const ci = colors[i] ?? (i % PALETTE.length);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(i * seg + state.rotation + seg / 2);
+        ctx.fillStyle = LABEL_INK[ci];
+        ctx.fillText(nameOf(state.wheel[i]), r - fontSize * 0.42, 0);
+        ctx.restore();
+      }
+    }
+
+    paintPointer(PALETTE[colors[wedgeUnderPointer()] ?? 0]);
+
+    // thin dark edge, the way the wedges meet the rim
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, TAU);
+    ctx.strokeStyle = 'rgba(0,0,0,.45)';
+    ctx.lineWidth = Math.max(1.5, size * 0.004);
+    ctx.stroke();
   }
 
   /* ---------- sound ---------- */
@@ -721,26 +1087,24 @@
   /* ---------- spin ---------- */
 
   function wedgeUnderPointer() {
-    const n = state.remaining.length;
+    const n = state.wheel.length;
     const seg = TAU / n;
     const a = ((-state.rotation % TAU) + TAU) % TAU;
     return Math.min(n - 1, Math.floor(a / seg));
   }
-
-  /* ---------- idle rotation ---------- */
 
   let idleRaf = null;
   let idleLastFrame = 0;
 
   function startIdle() {
     if (idleRaf || reduceMotion) return;
-    if (state.spinning || state.remaining.length < 2) return;
+    if (state.spinning || state.wheel.length < 2) return;
     idleLastFrame = performance.now();
     const step = (now) => {
-      if (state.spinning || state.remaining.length < 2) { idleRaf = null; return; }
+      if (state.spinning || state.wheel.length < 2) { idleRaf = null; return; }
       const dt = Math.min(50, now - idleLastFrame) / 1000;
       idleLastFrame = now;
-      state.rotation = (state.rotation + dt * 0.18) % TAU;
+      state.rotation = (state.rotation + dt * 0.1) % TAU;
       draw();
       idleRaf = requestAnimationFrame(step);
     };
@@ -753,13 +1117,13 @@
   }
 
   function spin() {
-    if (state.spinning || state.remaining.length === 0) return;
+    if (state.spinning || state.wheel.length === 0) return;
     stopIdle();
     wakeAudio();
     state.spinning = true;
     setControls();
 
-    const n = state.remaining.length;
+    const n = state.wheel.length;
     const seg = TAU / n;
 
     const index = pickIndex(n);
@@ -795,24 +1159,30 @@
   }
 
   function settle(index) {
-    const id = state.remaining[index];
-    state.drawn.push(id);
-    state.remaining.splice(index, 1);
-    assignColors();
+    const id = state.wheel[index];
+    state.results.push(id);
     state.spinning = false;
     renderAll();
-    const name = nameOf(id);
-    $('result').innerHTML = '<span class="name">' + escapeHtml(name) + '</span>';
-    showCelebration(name);
+    $('live').textContent = 'Winner: ' + nameOf(id);
+    showWinner(id);
   }
 
   function undo() {
-    const id = state.drawn.pop();
+    const id = state.results.pop();
     if (id === undefined) return;
-    state.remaining.push(id);
-    assignColors();
+    state.removed = state.removed.filter(x => x !== id);
+    rebuildWheel();
     renderAll();
-    $('result').innerHTML = '<span class="idle">Put ' + escapeHtml(nameOf(id)) + ' back on the wheel.</span>';
+    toast(nameOf(id) + ' is back on the wheel.');
+  }
+
+  function resetWheel() {
+    state.results = [];
+    state.removed = [];
+    state.rotation = 0;
+    rebuildWheel();
+    renderAll();
+    toast('Everyone is back on the wheel.');
   }
 
   /* ---------- rendering ---------- */
@@ -822,19 +1192,19 @@
   }
 
   function renderAll() {
-    $('chips').innerHTML = state.names.map(p =>
-      '<span class="chip">' + escapeHtml(p.name) +
-      '<button type="button" data-id="' + p.id + '" aria-label="Remove ' + escapeHtml(p.name) + '">\u00d7</button></span>'
-    ).join('');
+    syncTextarea();
 
-    $('drawnList').innerHTML = state.drawn
-      .map(id => '<li>' + escapeHtml(nameOf(id)) + '</li>')
+    const gone = new Set(state.removed);
+    $('drawnList').innerHTML = state.results
+      .map((id, i) =>
+        '<li class="' + (gone.has(id) ? 'gone' : '') + '"><span class="pos">' + (i + 1) + '</span>' +
+        escapeHtml(nameOf(id)) + '</li>')
+      .reverse()
       .join('');
-    $('history').hidden = state.drawn.length === 0;
+    $('resultsEmpty').hidden = state.results.length > 0;
 
-    $('tally').textContent = state.names.length
-      ? state.remaining.length + ' of ' + state.names.length + ' left'
-      : '';
+    $('entriesCount').textContent = state.names.length;
+    $('resultsCount').textContent = state.results.length;
 
     setControls();
     draw();
@@ -842,86 +1212,244 @@
   }
 
   function setControls() {
-    const btn = $('spinBtn');
-    const started = state.drawn.length > 0;
-    const done = state.names.length > 0 && state.remaining.length === 0;
+    const idle = !state.spinning && state.wheel.length > 0;
+    $('hub').disabled = !idle;
+    canvas.classList.toggle('busy', !idle);
 
-    btn.disabled = state.spinning || state.remaining.length === 0;
-    btn.textContent = state.spinning ? 'Spinning' : done ? 'All drawn' : 'Spin';
-
-    $('setup').hidden = started;
-    $('editBtn').hidden = !started;
-    $('undoBtn').hidden = !started;
-    $('resetBtn').hidden = !started;
-
-    // Big CTA in the hub only before the first spin, once there are enough names.
-    $('spinHub').hidden = state.spinning || started || state.remaining.length < 2;
-
-    if (!started && !state.spinning) {
-      const need = state.names.length < 2;
-      const r = $('result');
-      if (!r.querySelector('.name')) {
-        r.innerHTML = '<span class="idle">' +
-          (need ? 'Add at least two names.' : 'Ready when you are.') + '</span>';
-      }
-    }
+    $('entries').readOnly = state.spinning;
+    $('shuffleBtn').disabled = state.spinning;
+    $('sortBtn').disabled = state.spinning;
+    $('undoBtn').disabled = state.spinning || state.results.length === 0;
+    $('resetBtn').disabled = state.spinning || (state.results.length === 0 && state.removed.length === 0);
   }
 
-  /* ---------- wiring ---------- */
+  function showTab(which) {
+    const entries = which === 'entries';
+    $('tabEntries').setAttribute('aria-selected', String(entries));
+    $('tabResults').setAttribute('aria-selected', String(!entries));
+    $('paneEntries').hidden = !entries;
+    $('paneResults').hidden = entries;
+  }
 
-  $('nameInput').addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    addNames(e.target.value);
-    e.target.value = '';
+  let toastTimer = null;
+  function toast(msg) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+  }
+
+  /* ---------- wiring: entries ---------- */
+
+  $('entries').addEventListener('input', e => readEntries(e.target.value));
+  $('entries').addEventListener('blur', syncTextarea);
+
+  function reorder(fn) {
+    fn(state.names);
+    $('entries').blur();
+    rebuildWheel();
+    renderAll();
+  }
+
+  $('shuffleBtn').addEventListener('click', () => reorder(list => {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+  }));
+
+  $('sortBtn').addEventListener('click', () => reorder(list => {
+    list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }));
+
+  $('hub').addEventListener('click', spin);
+  canvas.addEventListener('click', spin);
+
+  $('undoBtn').addEventListener('click', undo);
+  $('resetBtn').addEventListener('click', resetWheel);
+
+  $('tabEntries').addEventListener('click', () => showTab('entries'));
+  $('tabResults').addEventListener('click', () => showTab('results'));
+
+  $('editFab').addEventListener('click', () => {
+    $('main').classList.remove('collapsed');
+    $('panelToggle').setAttribute('aria-expanded', 'true');
+    showTab('entries');
+    $('entries').focus();
   });
 
-  $('nameInput').addEventListener('paste', e => {
-    const text = (e.clipboardData || window.clipboardData).getData('text');
-    if (text && /[,\n;]/.test(text)) {
-      e.preventDefault();
-      addNames(text);
-      e.target.value = '';
+  $('panelToggle').addEventListener('click', () => {
+    const m = $('main');
+    const collapsed = m.classList.toggle('collapsed');
+    const btn = $('panelToggle');
+    btn.setAttribute('aria-expanded', String(!collapsed));
+    btn.setAttribute('aria-label', collapsed ? 'Show the entries panel' : 'Hide the entries panel');
+    requestAnimationFrame(sizeCanvas);
+  });
+
+  /* ---------- wiring: app bar ---------- */
+
+  $('navNew').addEventListener('click', () => {
+    state.names = [];
+    state.removed = [];
+    state.results = [];
+    state.rotation = 0;
+    rebuildWheel();
+    $('entries').value = '';
+    renderAll();
+    showTab('entries');
+    $('entries').focus();
+    toast('New wheel.');
+  });
+
+  $('navSave').addEventListener('click', () => {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state.names.map(p => p.name)));
+      toast('Wheel saved in this browser.');
+    } catch (e) {
+      toast('This browser would not let the wheel be saved.');
     }
   });
 
-  $('chips').addEventListener('click', e => {
-    const b = e.target.closest('button');
-    if (b) removeName(Number(b.dataset.id));
+  $('navOpen').addEventListener('click', () => {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {}
+    if (!Array.isArray(saved) || !saved.length) {
+      toast('Nothing saved in this browser yet.');
+      return;
+    }
+    state.removed = [];
+    state.results = [];
+    state.names = [];
+    readEntries(saved.join('\n'));
+    showTab('entries');
+    toast('Loaded the saved wheel.');
   });
 
-  $('spinBtn').addEventListener('click', spin);
-  $('spinHub').addEventListener('click', spin);
-  $('undoBtn').addEventListener('click', undo);
-
-  $('editBtn').addEventListener('click', () => {
-    $('setup').hidden = !$('setup').hidden;
-    if (!$('setup').hidden) $('nameInput').focus();
+  $('navShare').addEventListener('click', () => {
+    if (!state.names.length) { toast('Add some names first.'); return; }
+    const url = location.origin + location.pathname +
+      '?w=' + b64encode(JSON.stringify(state.names.map(p => p.name)));
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+        .then(() => toast('Link copied — it carries these entries.'))
+        .catch(() => toast('Copy this: ' + url));
+    } else {
+      toast('Copy this: ' + url);
+    }
   });
 
-  $('resetBtn').addEventListener('click', () => {
-    state.remaining = state.names.map(p => p.id);
-    state.drawn = [];
-    state.rotation = 0;
-    assignColors();
-    $('result').innerHTML = '<span class="idle">Ready when you are.</span>';
-    renderAll();
+  function toggleFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  }
+  $('navFull').addEventListener('click', toggleFullscreen);
+
+  /* The More menu is where the controls that have no button of their own live. */
+  function closeMenu() {
+    $('moreMenu').hidden = true;
+    $('navMore').setAttribute('aria-expanded', 'false');
+  }
+
+  $('navMore').addEventListener('click', e => {
+    e.stopPropagation();
+    const menu = $('moreMenu');
+    const open = menu.hidden;
+    menu.hidden = !open;
+    $('navMore').setAttribute('aria-expanded', String(open));
+    if (open) {
+      const r = $('navMore').getBoundingClientRect();
+      menu.style.left = Math.max(8, Math.min(r.left, innerWidth - 226)) + 'px';
+    }
   });
 
-  $('soundBtn').addEventListener('click', e => {
+  document.addEventListener('click', e => {
+    if (!$('moreMenu').hidden && !$('moreMenu').contains(e.target)) closeMenu();
+  });
+
+  $('menuSound').addEventListener('click', () => {
     state.sound = !state.sound;
-    e.target.textContent = state.sound ? 'Sound on' : 'Sound off';
+    $('menuSound').textContent = 'Sound: ' + (state.sound ? 'on' : 'off');
     if (state.sound) wakeAudio();
+    closeMenu();
   });
 
-  /* ---------- winner celebration ---------- */
+  $('menuReset').addEventListener('click', () => { resetWheel(); closeMenu(); });
+  $('menuFull').addEventListener('click', () => { toggleFullscreen(); closeMenu(); });
+
+  /* Present for the sake of the layout; nothing behind them in this build. */
+  const decorative = {
+    navCustomize: 'Customize is not part of this build.',
+    navGallery:   'Gallery is not part of this build.',
+    navLang:      'This build is English only.',
+    addImageBtn:  'Image entries are not part of this build.',
+    addWheelBtn:  'This build holds a single wheel.',
+    changelog:    'No changelog in this build.',
+  };
+  for (const [id, msg] of Object.entries(decorative)) {
+    $(id).addEventListener('click', () => toast(msg));
+  }
+
+  /* ---------- winner dialog ---------- */
+
+  let winnerId = null;
+
+  function showWinner(id) {
+    winnerId = id;
+    $('winnerName').textContent = nameOf(id);
+    const dupes = state.names.filter(p => p.name.toLowerCase() === nameOf(id).toLowerCase()).length;
+    $('winRemoveAll').hidden = dupes < 2;
+    // With nothing to disambiguate, Remove is the primary action.
+    $('winRemove').classList.toggle('soft', dupes >= 2);
+    $('winner').hidden = false;
+    fireConfetti();
+    setTimeout(() => $('winRemove').focus(), 20);
+  }
+
+  function closeWinner() {
+    $('winner').hidden = true;
+    winnerId = null;
+    $('hub').focus();
+  }
+
+  $('winClose').addEventListener('click', closeWinner);
+
+  $('winRemove').addEventListener('click', () => {
+    if (winnerId !== null && !state.removed.includes(winnerId)) state.removed.push(winnerId);
+    rebuildWheel();
+    renderAll();
+    closeWinner();
+  });
+
+  $('winRemoveAll').addEventListener('click', () => {
+    if (winnerId !== null) {
+      const target = nameOf(winnerId).toLowerCase();
+      for (const p of state.names) {
+        if (p.name.toLowerCase() === target && !state.removed.includes(p.id)) state.removed.push(p.id);
+      }
+    }
+    rebuildWheel();
+    renderAll();
+    closeWinner();
+  });
+
+  $('winner').addEventListener('click', e => { if (e.target === $('winner')) closeWinner(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!$('moreMenu').hidden) closeMenu();
+    else if (!$('winner').hidden) closeWinner();
+    else if (!$('composer').hidden) $('composer').hidden = true;
+  });
+
+  /* ---------- confetti ---------- */
 
   const confettiCanvas = $('confetti');
   const cctx = confettiCanvas.getContext('2d');
-  const CONFETTI_COLORS = ['#F7F5F0', '#2E6FB7', '#F2B233', '#E2493A'];
+  const CONFETTI_COLORS = PALETTE.concat(['#ffffff']);
   let confetti = [];
   let confettiRaf = null;
-  let previouslyFocused = null;
 
   function sizeConfetti() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -933,17 +1461,14 @@
   }
 
   function spawnBurst(originX, originY, angle) {
-    const count = 90;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 90; i++) {
       const a = angle + (Math.random() - 0.5) * 0.7;
       const speed = 11 + Math.random() * 14;
       confetti.push({
-        x: originX,
-        y: originY,
-        vx: Math.cos(a) * speed,
-        vy: Math.sin(a) * speed,
+        x: originX, y: originY,
+        vx: Math.cos(a) * speed, vy: Math.sin(a) * speed,
         size: 6 + Math.random() * 7,
-        rot: Math.random() * Math.PI * 2,
+        rot: Math.random() * TAU,
         vrot: (Math.random() - 0.5) * 0.4,
         color: CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0],
         oval: Math.random() < 0.3,
@@ -954,8 +1479,7 @@
   function stepConfetti() {
     const w = innerWidth, h = innerHeight;
     cctx.clearRect(0, 0, w, h);
-    const gravity = 0.32;
-    const drag = 0.992;
+    const gravity = 0.32, drag = 0.992;
 
     confetti = confetti.filter(p => {
       p.vx *= drag;
@@ -1003,29 +1527,6 @@
     if (!confettiRaf) confettiRaf = requestAnimationFrame(stepConfetti);
   }
 
-  function showCelebration(name) {
-    previouslyFocused = document.activeElement;
-    $('celebrationName').textContent = name;
-    $('celebration').hidden = false;
-    fireConfetti();
-    // Focus the close button so Enter/Space dismisses it.
-    setTimeout(() => $('celebrationClose').focus(), 20);
-  }
-
-  function hideCelebration() {
-    $('celebration').hidden = true;
-    if (previouslyFocused && previouslyFocused.focus) {
-      try { previouslyFocused.focus(); } catch (e) {}
-    }
-  }
-
-  $('celebrationClose').addEventListener('click', hideCelebration);
-  $('celebration').addEventListener('click', e => {
-    if (e.target === $('celebration')) hideCelebration();
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !$('celebration').hidden) hideCelebration();
-  });
   addEventListener('resize', () => { if (!confettiCanvas.hidden) sizeConfetti(); });
 
   /* ---------- composer ---------- */
@@ -1071,6 +1572,8 @@
     $('linkOut').textContent = '';
   });
 
+  $('closeComposer').addEventListener('click', () => { $('composer').hidden = true; });
+
   // Long-press the title for 1.2s to reveal the composer.
   let pressTimer = null;
   const title = $('title');
@@ -1082,11 +1585,24 @@
   title.addEventListener('pointercancel', endPress);
   title.addEventListener('contextmenu', e => e.preventDefault());
 
-  loadOrder();
+  /* ---------- boot ---------- */
+
+  const shared = loadFromUrl();
   new ResizeObserver(sizeCanvas).observe(canvas);
   document.fonts && document.fonts.ready.then(draw);
   sizeCanvas();
-  renderAll();
-})();
+  if (shared && shared.length) readEntries(shared.join('\n'));
+  // A reload leaves Chrome's restored text in the box without firing `input`,
+  // so read whatever is sitting there rather than starting out of step with it.
+  else if ($('entries').value.trim()) readEntries($('entries').value);
+  else renderAll();
 
+  };
+  // A script at the end of <body> still runs before DOMContentLoaded fires,
+  // so this stays correct however the page is served or injected into.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', __boot);
+  else __boot();
+})();
 </script>
+</body>
+</html>
